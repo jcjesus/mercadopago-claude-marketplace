@@ -55,8 +55,8 @@ One agent, four skills, one MCP. The plugin is an **orchestrator**, not a docume
 | Skill | What it does | Backed by |
 |-------|--------------|-----------|
 | `mp-integrate` | Wizard that scaffolds a complete integration for any product (Checkout Pro, Checkout API, Bricks, QR, Point, Subscriptions, Marketplace, Wallet Connect, Money Out, SmartApps). Asks the minimum questions, queries the MCP, returns a ready-to-paste bundle. | `search_documentation` |
-| `mp-webhooks` | Receiver pattern with HMAC-SHA256 validation; configures, simulates, and diagnoses webhooks. | `save_webhook`, `simulate_webhook`, `notifications_history_diagnostics` |
-| `mp-test-setup` | Creates test users and loads funds. Clarifies the modern testing model (no `TEST-` prefix anymore — both production and test users use `APP_USR-`). | `create_test_user`, `add_money_test_user` |
+| `mp-webhooks` | Receiver pattern with HMAC-SHA256 validation; configures and diagnoses webhooks. | `save_webhook`, `notifications_history` |
+| `mp-test-setup` | Creates test users and loads funds. Credentials come in `APP_USR-` (Orders API, Checkout Pro, Point, QR) and `TEST-` (Checkout API, Bricks) formats — both valid. | `create_test_user`, `add_money_test_user` |
 | `mp-review` | Runs the official quality checklist live + a fixed cross-cutting security floor. Suggests `quality_evaluation` when the integration produced a compatible payment/order id. | `quality_checklist`, `quality_evaluation` |
 
 ## Commands
