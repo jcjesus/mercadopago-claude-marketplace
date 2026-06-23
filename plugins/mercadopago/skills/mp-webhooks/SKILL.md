@@ -1,6 +1,6 @@
 ---
 name: mp-webhooks
-description: Configure, simulate, and validate Mercado Pago webhooks. Wraps the MCP webhook tools (save_webhook, simulate_webhook, notifications_history_diagnostics) and provides the HMAC-SHA256 signature validation pattern that every receiver must implement. Use when adding, debugging, or hardening notification handling.
+description: Configure and validate Mercado Pago webhooks. Wraps the MCP webhook tools (save_webhook, notifications_history) and provides the HMAC-SHA256 signature validation pattern that every receiver must implement. Use when adding, debugging, or hardening notification handling.
 license: Apache-2.0
 copyright: "Copyright (c) 2026 Mercado Pago (MercadoLibre S.R.L.)"
 metadata:
@@ -33,11 +33,10 @@ Ask the developer (or infer from `$ARGUMENTS`) which of these they want:
 | Action | Tool to call | When |
 |--------|--------------|------|
 | Configure the webhook URL on the MP application | `save_webhook` | First time setup or rotating the endpoint |
-| Send a fake notification to your endpoint | `simulate_webhook` | Smoke test the receiver before going live |
-| Diagnose delivery failures | `notifications_history_diagnostics` | Investigating missed/failed notifications |
+| Diagnose delivery failures | `notifications_history` | Investigating missed/failed notifications |
 | Scaffold the receiver code | (no MCP call — render the pattern below) | Adding the receiver to the codebase |
 
-You may chain them: scaffold the receiver → `save_webhook` → `simulate_webhook` to verify end to end.
+You may chain them: scaffold the receiver → `save_webhook` → trigger a real test payment to verify end to end → use `notifications_history` to confirm delivery.
 
 ---
 
@@ -128,20 +127,22 @@ Confirm the response shows the URL and topics correctly registered.
 
 ---
 
-## Step 5 — Smoke test (`simulate_webhook`)
+## Step 5 — Smoke test (real test payment)
 
-Once the receiver is deployed (or running locally with a tunnel like `ngrok`):
+`simulate_webhook` no longer exists in the MCP. To test your receiver:
 
+1. Make a real payment using test credentials + test user + test card
+2. The webhook fires automatically when the payment status changes
+3. Verify your receiver returned `200` and processed the event
+
+To confirm delivery, use `notifications_history`:
 ```
-mcp__plugin_mercadopago_mcp__simulate_webhook(
-  topic="payment",
-  url_callback="https://<your-url>/mp/webhook",
-  resource_id="<a real test payment id>",
-  callback_env_production=false
+mcp__plugin_mercadopago_mcp__notifications_history(
+  application_id="<your_app_id>"
 )
 ```
 
-Verify the receiver returned `200` and that the event was processed (idempotent: re-run the same call and check no duplicate side effects).
+This shows which notifications were delivered, failed, or retried.
 
 ---
 
