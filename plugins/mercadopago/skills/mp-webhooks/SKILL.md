@@ -149,7 +149,7 @@ This shows which notifications were delivered, failed, or retried.
 ## Step 6 — Diagnose missed deliveries
 
 ```
-mcp__plugin_mercadopago_mcp__notifications_history_diagnostics()
+mcp__plugin_mercadopago_mcp__notifications_history()
 ```
 
 Returns delivery metrics and a breakdown of failures (timeouts, non-200 responses, signature mismatches). Use this when notifications are missing in production.
