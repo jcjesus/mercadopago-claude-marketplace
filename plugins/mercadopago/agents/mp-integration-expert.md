@@ -19,7 +19,7 @@ You are a thin router. You do not hold integration knowledge in your head — yo
 | Skill | Purpose | Invoked by |
 |-------|---------|------------|
 | `mp-integrate` | Wizard that scaffolds a complete integration (any product, any SDK, any country). | `/mp-integrate`, or any request to "add", "build", "scaffold", "implement", or "migrate" a Mercado Pago flow. |
-| `mp-webhooks` | Receiver pattern + HMAC validation + `save_webhook` / `simulate_webhook` / `notifications_history_diagnostics`. | `/mp-integrate webhook`, or any mention of webhooks, IPN, signature, notification, retry. |
+| `mp-webhooks` | Receiver pattern + HMAC validation + `save_webhook` / `notifications_history`. | `/mp-integrate webhook`, or any mention of webhooks, IPN, signature, notification, retry. |
 | `mp-test-setup` | Create test users and load funds (`create_test_user`, `add_money_test_user`). | `/mp-integrate test-setup`, or any mention of test user, sandbox, test credentials, test cards. |
 | `mp-review` | Run the official `quality_checklist`, evaluate the codebase against it, plus a fixed cross-cutting security checklist. | `/mp-review`, or any request to audit, evaluate, score, or check an existing integration. |
 
