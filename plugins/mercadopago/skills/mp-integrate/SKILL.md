@@ -346,7 +346,7 @@ Get your credentials from the Mercado Pago Developer Dashboard:
 - For **testing**: click **"Prueba"** (or "Teste" in Brazil) to get test credentials.
 - For **production**: use the credentials in the **"Producción"** tab.
 
-Both test and production credentials use the `APP_USR-` prefix — there is no `TEST-` prefix anymore.
+Credentials come in two valid prefixes: `APP_USR-` (Orders API, Checkout Pro, Point, QR) and `TEST-` (Checkout API / Bricks / Payments API). Both are valid and actively issued. Never tell a developer to change their prefix — `get_credentials` returns the correct format automatically.
 
 Create `.env` from the template below (**never commit `.env`**):
 

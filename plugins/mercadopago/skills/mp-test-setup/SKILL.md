@@ -1,6 +1,6 @@
 ---
 name: mp-test-setup
-description: Create test users and add funds to them for Mercado Pago testing. Wraps create_test_user and add_money_test_user from the MCP. Clarifies that all credentials (including test users) use the APP_USR- prefix — there is no longer a TEST- sandbox.
+description: Create test users and add funds to them for Mercado Pago testing. Wraps create_test_user and add_money_test_user from the MCP. Clarifies that credentials come in APP_USR- (Orders API, Checkout Pro, Point, QR) and TEST- (Checkout API, Bricks, Payments API) formats — both are valid and actively issued.
 license: Apache-2.0
 copyright: "Copyright (c) 2026 Mercado Pago (MercadoLibre S.R.L.)"
 metadata:
@@ -12,15 +12,18 @@ metadata:
 
 # mp-test-setup
 
-This skill is the only place test users get created. It exists because the testing model is a frequent source of confusion (legacy docs still mention `TEST-` credentials that no longer exist).
+This skill is the only place test users get created. It exists because the testing model is a frequent source of confusion.
 
 ---
 
 ## The current testing model — read first
 
 - **There is no separate sandbox.** Tests run against the production API using the credentials of a **test user**.
-- **Test user credentials use the `APP_USR-` prefix**, exactly like real production credentials. There is no way to tell them apart by prefix.
-- The legacy `TEST-` prefix is **deprecated**. Never suggest it, never ask if a credential is "sandbox" by its prefix.
+- **Credential prefixes — two valid formats, both actively issued:**
+  - `APP_USR-`: Orders API, Checkout Pro, Point, QR Code, and test user credentials
+  - `TEST-`: Checkout API / Payments API, Checkout Bricks, Subscriptions
+  - **Never tell a developer to change their prefix.** `get_credentials` returns the correct format automatically.
+- **Never ask if a credential is "sandbox" by its prefix** — the prefix alone does not distinguish test from production.
 - A test user has its own balance (loaded via this skill) and behaves like any real account.
 - For automated test credentials without creating a test user: in the Developer Dashboard, *Tus integraciones → Datos de integración → Credenciales* → click **"Prueba"** (Brazilian Portuguese: *Suas integrações → Dados de integração → Credenciais → "Teste"*).
 

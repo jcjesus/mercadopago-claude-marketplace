@@ -97,7 +97,7 @@ Mode is **product-dependent**. Use the lock table below as a hard constraint whe
 | Product | The ONLY valid `mode` values | What to pass via `mode=` |
 |---------|------------------------------|--------------------------|
 | `checkout-pro` | `preferences` (the Orders API does **not** exist for Checkout Pro) | Always pass `mode=preferences`. Do not infer "orders" from anything. |
-| `checkout-api` | `orders`, `payments` | Pass `orders` for new code; `payments` only if existing code uses `/v1/payments`. |
+| `checkout-api` | `orders` | Always `orders` in ALL countries for card payments. |
 | `bricks` | `orders` | Always pass `mode=orders`. |
 | `qr` | `orders`, `legacy` | Pass `orders` for new; `legacy` if existing code calls `/qr` legacy endpoints. |
 | `point` | `orders`, `legacy` | Same as qr. |
@@ -106,6 +106,20 @@ Mode is **product-dependent**. Use the lock table below as a hard constraint whe
 | `subscriptions` / `money-out` / `smartapps` | n/a (their own APIs) | Do not pass `mode=`. |
 
 **If you find yourself about to set `mode=orders` for `product=checkout-pro`, abort.** The Orders API is not available for Checkout Pro today. Period.
+
+## ⭐ Golden Rule — Orders API availability by country
+
+Orders API is available in **all** countries. Always use `orders` as the default mode.
+
+| Country | Card payments (checkout-api, bricks) | Point availability | QR availability |
+|---------|--------------------------------------|-------------------|-----------------|
+| MLA, MLB, MLM | `orders` ✅ | ✅ Available | ✅ Available (MLM: QR not available) |
+| MLC | `orders` ✅ | ✅ Available | ✅ Available |
+| MCO | `orders` ✅ | ❌ Not available | ❌ Not available |
+| MPE | `orders` ✅ | ❌ Not available | ❌ Not available |
+| MLU | `orders` ✅ | ❌ Not available | ✅ Available |
+
+**Before recommending Point or QR**, always verify availability for the developer's country. Use Payments API as fallback only when the offline method is unavailable in that country.
 
 When the product allows more than one mode, infer the current mode from the codebase before asking:
 - `Grep` for `/v1/orders` / `order.create` → `orders`.
@@ -123,8 +137,11 @@ Hand control to the matched skill with the parameters you collected. Do **not** 
 - Test user credentials have the `APP_USR-` prefix (same as real production credentials)
 - To create test users: use the MCP tool `create_test_user` or the Developer Dashboard
 - To load balance into test users: use the MCP tool `add_money_test_user`
-- **Never suggest using credentials with `TEST-` prefix** — they are legacy and no longer issued
-- **Never ask if a credential is "sandbox" or "test" based on its prefix** — both test and production credentials start with `APP_USR-`
+- **Credential prefixes — two valid formats, both actively issued:**
+  - `APP_USR-`: Orders API, Checkout Pro, Point, QR Code, and apps created via MCP `create_application`
+  - `TEST-`: Checkout API / Payments API, Checkout Bricks, Subscriptions, and legacy integrations
+  - **Never tell a developer to change their credential prefix.** `get_credentials` always returns the correct format for the app's configured product.
+- **Never ask if a credential is "sandbox" or "test" based on its prefix** — the prefix alone does not tell them apart from production credentials
 - **How to obtain test credentials**: In the Developer Dashboard, navigate to *Tus integraciones > Datos de integracion > Credenciales* (right panel) > click **"Prueba"**. Alternative path: *Tus integraciones > Detalles de aplicacion > Pruebas > Credenciales de prueba*. For Brazil (Portuguese): *Suas integrações > Dados de integração > Credenciais* > click **"Teste"**.
 - **Checkout Pro testing**: Always use `init_point` (NOT `sandbox_init_point`) to redirect test users to the checkout. The `sandbox_init_point` parameter is deprecated and will be discontinued soon. For the complete test purchase flow, consult MCP (`search_documentation` with term "checkout pro test purchase").
 - **Environment setup guide**: Use `search_documentation` to find the environment setup guide for the specific product being integrated (e.g., search "configure environment {product}"). Do not hardcode a single product URL.
