@@ -2,7 +2,7 @@
 
 Mercado Pago full-product integration toolkit for Claude Code.
 
-> **The Mercado Pago MCP server must always be connected for this plugin to do anything.** Every endpoint, payload, code snippet, and quality check is pulled live from `mcp.mercadopago.com`. There is no offline fallback. If the MCP is not authenticated, the agent and all skills stop and ask the user to run `/mp-connect`.
+> **Code scaffolding works without MCP authentication** using bundled references and the official per-country `llms.txt`. Live docs (`search_documentation`), credential lookup (`get_credentials`), test-user creation, and webhook registration require the authenticated Mercado Pago MCP server — run `/mp-connect` to enable them. The MCP gate is *selective*: only the steps that need live API calls prompt for connection.
 
 ## Quick Start
 
@@ -42,8 +42,7 @@ One agent, four skills, one MCP. The plugin is an **orchestrator**, not a docume
               │  quality_checklist        │
               │  quality_evaluation       │
               │  save_webhook             │
-              │  simulate_webhook         │
-              │  notifications_history… │
+                            │  notifications_history… │
               │  create_test_user         │
               │  add_money_test_user      │
               │  application_list         │
@@ -56,7 +55,7 @@ One agent, four skills, one MCP. The plugin is an **orchestrator**, not a docume
 |-------|--------------|-----------|
 | `mp-integrate` | Wizard that scaffolds a complete integration for any product (Checkout Pro, Checkout API, Bricks, QR, Point, Subscriptions, Marketplace, Wallet Connect, Money Out, SmartApps). Asks the minimum questions, queries the MCP, returns a ready-to-paste bundle. | `search_documentation` |
 | `mp-webhooks` | Receiver pattern with HMAC-SHA256 validation; configures and diagnoses webhooks. | `save_webhook`, `notifications_history` |
-| `mp-test-setup` | Creates test users and loads funds. Credentials come in `APP_USR-` (Orders API, Checkout Pro, Point, QR) and `TEST-` (Checkout API, Bricks) formats — both valid. | `create_test_user`, `add_money_test_user` |
+| `mp-test-setup` | Creates test users and loads funds. Credentials come in `APP_USR-` (Orders API, Checkout Pro, Point, QR) and `TEST-` (Checkout API, Bricks) formats — both valid and actively issued. | `create_test_user`, `add_money_test_user` |
 | `mp-review` | Runs the official quality checklist live + a fixed cross-cutting security floor. Suggests `quality_evaluation` when the integration produced a compatible payment/order id. | `quality_checklist`, `quality_evaluation` |
 
 ## Commands
@@ -74,7 +73,7 @@ One agent, four skills, one MCP. The plugin is an **orchestrator**, not a docume
 - Static product matrices (payment status tables, device lists, country availability) deleted — pulled live from MCP.
 - `mp-setup` command renamed to `mp-integrate`, with `webhook` and `test-setup` sub-routes.
 - Agent shrunk to a router (~120 lines) with no embedded product knowledge.
-- MCP-connection gate is now **mandatory** in the agent and every skill — no skill loads if the MCP is not authenticated.
+- MCP-connection gate is now **selective** — scaffolding proceeds offline; only steps needing live API calls (docs search, credentials, test users, webhooks) prompt for `/mp-connect`.
 
 ## Hook: Credential Leak Prevention
 
@@ -82,7 +81,7 @@ Automatically scans code being written for hardcoded Mercado Pago credentials (A
 
 ## MCP: Mercado Pago API
 
-Connects to the official Mercado Pago MCP server (`https://mcp.mercadopago.com/mcp`) via HTTP transport. OAuth-based auth — run `/mp-connect` for setup. The plugin will refuse to operate without an authenticated MCP.
+Connects to the official Mercado Pago MCP server (`https://mcp.mercadopago.com/mcp`) via HTTP transport. OAuth-based auth — run `/mp-connect` for setup. Scaffolding works without it; live docs, credential lookup, test-user creation, and webhook registration require an authenticated MCP.
 
 ## Configuration
 

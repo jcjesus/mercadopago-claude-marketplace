@@ -40,3 +40,6 @@ yarn-error.log*
 .pytest_cache/
 coverage/
 *.coverage
+
+# Internal MELI dev process (not for public repo)
+meli/

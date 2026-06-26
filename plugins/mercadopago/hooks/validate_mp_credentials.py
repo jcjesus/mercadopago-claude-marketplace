@@ -160,11 +160,21 @@ def scan(text: str) -> list[tuple[str, str]]:
 
 
 def is_env_file(path: str) -> bool:
-    """Check if path is a .env file (not .env.example)."""
+    """Check if path is a .env file (not .env.example) within the project root."""
     basename = os.path.basename(path)
     if basename == ".env.example" or basename.endswith(".env.example"):
         return False
-    return basename == ".env" or basename.startswith(".env.")
+    if not (basename == ".env" or basename.startswith(".env.")):
+        return False
+    # Ensure the file is within the current working directory (prevent path traversal)
+    try:
+        abs_path = os.path.realpath(os.path.abspath(path))
+        project_root = os.path.realpath(os.getcwd())
+        if not abs_path.startswith(project_root + os.sep) and abs_path != project_root:
+            return False
+    except (OSError, ValueError):
+        return False
+    return True
 
 
 # ---------- main ----------

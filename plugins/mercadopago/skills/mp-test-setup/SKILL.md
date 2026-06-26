@@ -4,7 +4,7 @@ description: Create test users and add funds to them for Mercado Pago testing. W
 license: Apache-2.0
 copyright: "Copyright (c) 2026 Mercado Pago (MercadoLibre S.R.L.)"
 metadata:
-  version: "4.0.0"
+  version: "4.2.0"
   author: "Mercado Pago Developer Experience"
   category: "development"
   tags: "mercadopago, testing, test-user, sandbox, credentials"
@@ -12,20 +12,43 @@ metadata:
 
 # mp-test-setup
 
-This skill is the only place test users get created. It exists because the testing model is a frequent source of confusion.
+This skill is the only place test users get created. It exists because the testing model is a frequent source of confusion — there are two distinct types of test credentials with different prefixes.
+
+---
+
+## Pre-check — confirm readiness before creating test users
+
+> You are at **step 4 of 7** in the integration journey:
+> `1. Create app · 2. Get TEST creds · 3. Scaffold · 4. Create test user ← here · 5. E2E · 6. /mp-review · 7. Prod`
+
+Before creating test users, confirm the basics via `AskUserQuestion` (up to 3 questions — skip any already in `.mp-integrate-progress.md`):
+
+1. **Account** — Skip if already confirmed in `.mp-integrate-progress.md`. Otherwise: "Do you have a Mercado Pago developer account?" → `Yes` / `No`
+2. **Credentials** — "Do you have your `APP_USR-` access token?" → `Yes` / `No`
+3. **Credential type** — "Are you using TEST credentials — from the {test_tab}?" → `Yes, test credentials` / `No, production credentials` / `I don't know`
+
+- **No account** → point to the dashboard for the country (Chile: `https://www.mercadopago.cl/developers` — no `.com`; others `https://www.mercadopago.com.{cc}/developers`).
+- **No credentials** → once the MCP is authenticated (Step 0 → State A): (1) call `application_list`, (2) ask via `AskUserQuestion` *"Which app do you want to use?"* listing each app by name, (3) call `mcp__plugin_mercadopago_mcp__get_credentials` with the chosen `application_id`, (4) display credentials inline. **Never write to file or commit.** If MCP is not authenticated, complete Step 0 first.
+- **Credential type — No, production credentials** OR **I don't know** → show this **BLOCKING WARNING** and do NOT create a test user:
+
+  > ⛔ **WARNING — Production credentials detected**
+  > A real card charge may occur if you test against production. Switch to the **{test_tab}** tab in the Developer Dashboard first.
+  > 👉 `https://{DOMAIN}/developers/panel/app` → Credentials → **{test_tab}** tab
+
+  Re-show question 3 until the developer confirms "Yes, test credentials". **This gate has no Skip option** — do not proceed to Step 2 (test user creation) otherwise.
+
+> Unlike `mp-integrate`, this skill's MCP gate stays **hard**: creating test users requires authenticated MCP calls, so there is no scaffold-only path here.
 
 ---
 
 ## The current testing model — read first
 
-- **There is no separate sandbox.** Tests run against the production API using the credentials of a **test user**.
-- **Credential prefixes — two valid formats, both actively issued:**
-  - `APP_USR-`: Orders API, Checkout Pro, Point, QR Code, and test user credentials
-  - `TEST-`: Checkout API / Payments API, Checkout Bricks, Subscriptions
-  - **Never tell a developer to change their prefix.** `get_credentials` returns the correct format automatically.
-- **Never ask if a credential is "sandbox" by its prefix** — the prefix alone does not distinguish test from production.
-- A test user has its own balance (loaded via this skill) and behaves like any real account.
-- For automated test credentials without creating a test user: in the Developer Dashboard, *Tus integraciones → Datos de integración → Credenciales* → click **"Prueba"** (Brazilian Portuguese: *Suas integrações → Dados de integração → Credenciais → "Teste"*).
+- **Credential prefixes — two distinct types:**
+  - **`APP_USR-`** → test user credentials from `create_test_user`, production credentials, Orders API, Checkout Pro, Point, QR
+  - **`TEST-`** → static test credentials from the {test_tab} tab, Checkout API / Bricks / Payments API
+  Both are valid. `get_credentials` returns the correct format automatically. Never tell a developer to change their prefix.
+- **Test user credentials use the `APP_USR-` prefix** and run against the production API. A test user has its own balance (loaded via this skill) and behaves like a real account.
+- For static test credentials without creating a test user: in the Developer Dashboard, go to your app → Credentials → click the **{test_tab}** tab.
 
 ---
 
@@ -33,9 +56,12 @@ This skill is the only place test users get created. It exists because the testi
 
 `ListMcpResourcesTool` is unreliable for this MCP (always returns "No resources found"). The bootstrap tools `authenticate` / `complete_authentication` are always present and prove nothing.
 
-Check whether `mcp__plugin_mercadopago_mcp__application_list` is callable AND returns at least one application. If not, stop and tell the user:
+Check whether `mcp__plugin_mercadopago_mcp__application_list` is callable AND returns at least one application. If not, **call `mcp__plugin_mercadopago_mcp__authenticate` immediately** and show:
 
-> Call `mcp__plugin_mercadopago_mcp__authenticate`, show the URL as a clickable link, and say: "When you see **Authentication Successful** in the browser, come back and say anything." When the user responds, call `application_list` directly — do NOT call `complete_authentication` first (it hangs when the callback was already consumed). Never ask the user to paste the callback URL — it contains a sensitive OAuth code.
+> To create test users I need access to your Mercado Pago account. Open this link to connect: **[Connect Mercado Pago]({url})**
+When you see "Authentication Successful" in the browser, come back and say anything.
+
+When the user returns, call `application_list` directly — do NOT call `complete_authentication` first. Never ask the user to paste the callback URL.
 
 ---
 
@@ -60,7 +86,12 @@ Call `mcp__plugin_mercadopago_mcp__create_test_user` with:
 | `profile` | yes | `seller` or `buyer` — pick the role you need to simulate |
 | `amount` | optional | Initial balance in the country's currency |
 
-The tool returns the user id, email, password, and `APP_USR-` credentials. Show them to the developer with a reminder: **these are not committable secrets — load them from `.env` only**.
+The tool returns the user id, email, password, and `APP_USR-` credentials.
+
+⚠️ **Critical distinction — two types of credentials:**
+- **Test user email + password** → use to **log in at the checkout page** as the buyer/seller during testing. NOT for your `.env`.
+- **Test user `APP_USR-` credentials** → the test user's own API credentials. Used only if you need to make API calls AS that test user (e.g., marketplace seller OAuth flows). NOT your app's `MP_ACCESS_TOKEN`.
+- **Your app's `MP_ACCESS_TOKEN`** → comes from DevPanel → your app → {test_tab} tab. This is what goes in your `.env`. Created by `mp-integrate`, NOT by `create_test_user`.
 
 > If the developer needs both sides of a transaction (typical for marketplace, subscriptions, P2P), create one `seller` and one `buyer`.
 
@@ -81,7 +112,10 @@ Country-specific limits apply. If the call fails with a limit error, ask for a s
 
 ## Step 4 — Test cards
 
-For card testing, do **not** invent card numbers. Query MCP `search_documentation` with `"test cards {country}"` (e.g., `"test cards argentina"`) — the official set changes per country and per acquirer.
+For card testing, do **not** invent card numbers.
+
+1. **First**, read `~/.claude/plugins/cache/claude-plugins-official/mercadopago/{version}/skills/mp-integrate/references/products.md` — it has curated, version-pinned test cards for **AR, BR, MX, CO, CL** (numbers, CVV, expiry, and the `APRO`/`OTHE`/`FUND`/… status-code table). For these five countries, no MCP call is needed.
+2. **Only if the country is not listed there** (e.g. PE, UY), fall back to MCP `search_documentation` with `"test cards {country}"` (e.g., `"test cards peru"`).
 
 ---
 
@@ -95,19 +129,38 @@ Output template:
 **Country**: {country}
 **Profile**: {seller | buyer}
 **User id**: {id}
-**Email**: {email}
 **Initial balance**: {amount} {currency}
 
-### Credentials (load from `.env`, never commit)
+### 🔑 Login credentials (to simulate the buyer/seller at checkout)
+
+Use these to **log in at the Mercado Pago checkout page** during a test purchase:
+
+- **Email**: {email}
+- **Password**: {password}
+
+> These are NOT your MP_ACCESS_TOKEN. Do NOT put these in your `.env`.
+
+---
+
+### 📋 Your app's test credentials (for your `.env`)
+
+These come from **DevPanel → your app → {test_tab} tab** — NOT from the test user.
+
 ```
-MP_ACCESS_TOKEN=APP_USR-...
-MP_PUBLIC_KEY=APP_USR-...
+MP_ACCESS_TOKEN=APP_USR-...   ← your app's test access token (from DevPanel)
+MP_PUBLIC_KEY=APP_USR-...     ← your app's test public key (from DevPanel)
 ```
 
+> Both types of credentials use the `APP_USR-` prefix — what matters is WHERE they come from:
+> - Your `.env`: from DevPanel → your app → {test_tab} tab
+> - Checkout login: the test user's email + password above
+
 ### Next steps
-- Smoke test with `mp-webhooks` → `simulate_webhook`.
-- Run `mp-review` to validate the integration once a payment goes through.
-- For card payments, query MCP for current test cards: `search_documentation("test cards {country}")`.
+- Use the test user **email + password** to log in at the checkout when making a test purchase.
+- Use your app's **MP_ACCESS_TOKEN** (from DevPanel) in your backend to create orders/payments.
+- For card payments, use the test cards in `references/products.md`.
+- Smoke test with `mp-webhooks` → trigger a real test payment to fire the webhook.
+- Run `mp-review` after a successful test payment.
 ```
 
 ---

@@ -93,15 +93,16 @@ If you find yourself wanting to add such content, the answer is: **extend the MC
 
 ## WebFetch Budget (v4)
 
-WebFetch is **not** a fallback for an unauthenticated MCP. It is only allowed when:
+WebFetch is used for the official `llms.txt` per country (Tier 1 of the documentation hierarchy). This file is public, always current, and a few KB — the developer always has internet.
 
-- The MCP is connected, and
-- A specific docs page is needed that `search_documentation` did not surface.
+Documentation hierarchy:
+- **Tier 1**: WebFetch `{country_domain}/developers/llms.txt` — official, always current. Fallback to tier 2 if fails.
+- **Tier 2**: bundled `references/products.md`
+- **Tier 3**: MCP `search_documentation` (auth required)
 
 Limits:
-
-- **Maximum 1 WebFetch per interaction** (down from 2 in v3).
-- Never use WebFetch as a substitute for missing MCP authentication — stop and ask the user to run `/mp-connect`.
+- **Maximum 1 WebFetch per interaction** — used for the official `llms.txt`. Do not use for anything else.
+- Never use WebFetch as a substitute for missing MCP authentication.
 - Never fetch the same page twice.
 
 ## Adding new functionality
@@ -114,6 +115,89 @@ The default answer is **extend `mp-integrate`**, not "create a new skill".
 - New review dimension → extend `mp-review`'s security floor or add a new query against `quality_checklist`.
 
 If you genuinely need a fifth skill, document why the existing four cannot cover it.
+
+## v4.1 Changes — DX Improvements (June 2026)
+
+Derived from a real integration test session (101 min, 13 findings). Root cause: the plugin assumed the developer arrived with a ready environment. The changes below close that gap without altering the MCP-first architecture.
+
+**Golden Rule update:** The MCP gate is now _selective_, not universal. Gate placement depends on whether the flow actually requires authenticated MCP calls.
+
+### Mudança 1 — Guided onboarding before integration
+
+**Files:** `skills/mp-integrate/SKILL.md` (Step 1.b), `skills/mp-test-setup/SKILL.md` (before Step 1)
+
+Before the integration wizard begins collecting product/country/mode, ask via `AskUserQuestion`:
+- Do you already have a Mercado Pago developer account?
+- Do you already have your test credentials (APP_USR- access token + public key)?
+- Is your environment set up (SDK installed, etc.)?
+
+If any answer is no, route to the appropriate setup step before continuing. Do not silently proceed.
+
+### Mudança 2 — Surgical MCP gate
+
+**Files:** `skills/mp-integrate/SKILL.md` (Step 0), `commands/mp-integrate.md` (Execution rule 1), `skills/mp-webhooks/SKILL.md` (Step 0)
+
+**Gate placement rules — memorize these:**
+
+| Skill / Command | Gate required? | Reason |
+|---|---|---|
+| `mp-review` | **YES — keep** | All checks require authenticated MCP calls |
+| `mp-test-setup` | **YES — keep** | Creates test users via API; cannot work offline |
+| `mp-integrate` (scaffold-only path) | **SOFTEN** | Code scaffolding does not need MCP; gate only before first `search_documentation` call |
+| `mp-webhooks` (scaffold receiver) | **SOFTEN** | Receiver scaffold is static; gate only before `simulate_webhook` or tool calls |
+| `commands/mp-integrate.md` | **SOFTEN** | Mirror the skill: gate only when MCP data is actually needed |
+
+"Soften" means: proceed with scaffold steps and show the OAuth prompt inline (State B) when the first MCP call is reached, rather than blocking at the very start.
+
+### Mudança 3 — Prerequisites checklist
+
+**Files:** `commands/mp-integrate.md` (add before routing table), `skills/mp-integrate/SKILL.md` (Step 0 or Step 1.a)
+
+Add a visible prerequisites block before any wizard step:
+
+```
+Before we start, you'll need:
+- [ ] A Mercado Pago developer account (mercadopago.com.{country}/developers)
+- [ ] An app created in the Developer Dashboard
+- [ ] Test credentials: APP_USR- access token + public key (tab "Prueba" / "Teste")
+- [ ] @mercadopago/sdk-react installed (if React project)
+```
+
+### Mudança 4 — Static anchor files (`llms.txt` + `references/products.md`)
+
+**Files to CREATE:**
+- `plugins/mercadopago/llms.txt` — editorial rules readable before auth (no frontmatter, plain text)
+- `plugins/mercadopago/skills/mp-integrate/references/products.md` — SDK components per product, test card data per country
+
+**File to UPDATE:** `skills/mp-test-setup/SKILL.md` Step 4
+
+Change Step 4 from:
+> "do NOT invent card numbers. Query MCP `search_documentation` with 'test cards {country}'"
+
+To:
+> "Read `skills/mp-integrate/references/products.md` first for bundled test card data. Only fall back to MCP `search_documentation` if the country is not listed in the file."
+
+**What goes in `references/products.md`:**
+- `@mercadopago/sdk-react` component map: `CardPayment` (not `CardForm` — CardForm does not exist), `Payment`, `StatusScreen`, `Wallet`
+- Test card numbers per country (AR, BR, MX, CO, CL) — static, curated, version-pinned
+- Any fact that (a) changes rarely and (b) where a hallucination has high DX impact
+
+**What does NOT go in `references/products.md`:** endpoint URLs, payment status tables, per-country payment methods — those stay in MCP.
+
+**`llms.txt` purpose:** Provides the model with editorial anchors (SDK component names, prefix rules, no-`sandbox_init_point`) that it can read before OAuth completes. Think of it as a pre-auth guard rail.
+
+> **Validation checklist update:** Remove the check `test -z "$(find plugins/mercadopago/skills -name 'references' -type d)"` — `references/` is now intentional in `mp-integrate`. Update to: `find plugins/mercadopago/skills -name 'references' -type d | grep -v mp-integrate && echo "ERROR: unexpected references dirs" || echo "OK"`.
+
+### Mudança 5 — MCP auto-config on install (already resolved)
+
+**Status: `.mcp.json` already exists at `plugins/mercadopago/.mcp.json`.**
+
+The root cause of the test session was a manual install that did not copy `.mcp.json` to the project. No code change needed. Action required:
+
+**Document the manual install path** in `commands/mp-connect.md` or a README:
+> If you installed the plugin manually (not via `claude plugin install`), copy `plugins/mercadopago/.mcp.json` to your project root and restart Claude Code. The file configures the MCP server at `https://mcp.mercadopago.com/mcp` automatically.
+
+---
 
 ## Validation Checklist
 
@@ -145,8 +229,8 @@ done
 # All skills have valid YAML frontmatter
 for f in plugins/mercadopago/skills/*/SKILL.md; do head -1 "$f"; done
 
-# No legacy reference files
-test -z "$(find plugins/mercadopago/skills -name 'references' -type d 2>/dev/null)" && echo "OK: no references dirs" || echo "ERROR: legacy references/ dirs still present"
+# No unexpected reference dirs (references/ is allowed only in mp-integrate)
+find plugins/mercadopago/skills -name 'references' -type d 2>/dev/null | grep -v mp-integrate && echo "ERROR: unexpected references dirs" || echo "OK"
 ```
 
 ## pre-commit

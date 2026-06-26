@@ -4,7 +4,7 @@ description: Review a Mercado Pago integration against the official quality chec
 license: Apache-2.0
 copyright: "Copyright (c) 2026 Mercado Pago (MercadoLibre S.R.L.)"
 metadata:
-  version: "4.1.0"
+  version: "4.2.0"
   author: "Mercado Pago Developer Experience"
   category: "development"
   tags: "mercadopago, review, quality, checklist, security"
@@ -20,11 +20,12 @@ This skill audits a Mercado Pago integration. It does not duplicate the official
 
 `ListMcpResourcesTool` is unreliable for this MCP (always returns "No resources found"). The bootstrap tools `authenticate` / `complete_authentication` are always present and prove nothing.
 
-Check whether `mcp__plugin_mercadopago_mcp__quality_checklist` is callable AND returns a real payload. If not, stop and tell the user:
+Check whether `mcp__plugin_mercadopago_mcp__quality_checklist` is callable AND returns a real payload. If not, **call `mcp__plugin_mercadopago_mcp__authenticate` immediately** and show:
 
-> Call `mcp__plugin_mercadopago_mcp__authenticate`, show the URL as a clickable link, and say: "When you see **Authentication Successful** in the browser, come back and say anything." When the user responds, call `application_list` directly — do NOT call `complete_authentication` first (it hangs when the callback was already consumed). Never ask the user to paste the callback URL — it contains a sensitive OAuth code.
+> To continue I need access to your Mercado Pago account. Open this link to connect: **[Connect Mercado Pago]({url})**
+When you see "Authentication Successful" in the browser, come back and say anything.
 
-The official checklist lives behind the MCP — there is no offline fallback.
+When the user returns, call `application_list` directly — do NOT call `complete_authentication` first. Never ask the user to paste the callback URL.
 
 ---
 
@@ -78,16 +79,37 @@ These items are not always part of `quality_checklist` but are mandatory for any
 
 ---
 
-## Step 4 — Suggest `quality_evaluation` (only when compatible)
+## Step 4 — Run `quality_evaluation` (when compatible)
 
-`quality_evaluation` requires a real `payment_id` (or in the future, `order_id`). Do **not** force it; suggest only when the integration produced one and the tool's required ID matches the API in use.
+`mcp__plugin_mercadopago_mcp__quality_evaluation` requires a real `payment_id`. Run it when the integration used the Payments API and produced a payment ID.
 
-| Tool requires | Integration uses | Action |
-|---------------|------------------|--------|
-| `payment_id` | Payments API | Suggest: "Run `quality_evaluation` against a recent test payment ID for a deeper score." |
-| `payment_id` | Orders API only | Do not suggest — incompatible. |
-| `order_id` (future) | Orders API | Suggest with a recent test order ID. |
-| `order_id` (future) | Payments API only | Suggest migrating to Orders API; do not force. |
+| Integration uses | Action |
+|------------------|--------|
+| Payments API (`/v1/payments`) | Ask the developer for a recent test `payment_id`, then call `mcp__plugin_mercadopago_mcp__quality_evaluation` with it. |
+| Orders API only | Skip — incompatible. Mention in the report. |
+
+```
+mcp__plugin_mercadopago_mcp__quality_evaluation(
+  payment_id="<recent_test_payment_id>"
+)
+```
+
+If the developer doesn't have a payment ID, skip and note in the report: `"quality_evaluation: skipped — no payment_id provided."`
+
+---
+
+## Step 4.5 — Homologation form (final step before production)
+
+After quality_evaluation (or if it was skipped), offer the homologation form to the developer:
+
+> "Before switching to production credentials, complete the official homologation checklist. This certifies your integration and activates it for production."
+
+1. Call `mcp__plugin_mercadopago_mcp__form_homologation` with `action="get_form"`, `product_id` (from detected product), `site_id` (from detected country), `lang`, `is_ca` (true for Checkout API / Bricks).
+2. Present each step/question to the developer via `AskUserQuestion`. Collect answers.
+3. When all questions are answered, call with `action="submit"` and the collected `form_values`.
+4. On success: congratulate the developer and confirm the integration is certified.
+
+If the developer skips: note it in the Implementation Report under "Needs attention": `"Homologation form not submitted — required before production deployment."`.
 
 ---
 
@@ -165,7 +187,7 @@ The report is the source of truth for the developer's next session: it tells the
 ### Resources used
 - MCP: `quality_checklist` ({date/time of call})
 - MCP: `quality_evaluation` (if it was run, with the payment_id/order_id used)
-- Skill: `mp-review` v4.1.0
+- Skill: `mp-review` v4.2.0
 
 **Scores**: {X}/{Y} required, {Z}/{W} best practices, {S}/9 security. **Verdict**: {Ready for production | Needs fixes | Blocked}.
 ```

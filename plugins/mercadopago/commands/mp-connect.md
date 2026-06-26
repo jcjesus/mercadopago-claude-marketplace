@@ -13,7 +13,7 @@ Use this command only if the connection is broken or you want to verify the stat
 
 ---
 
-> **Note**: Mercado Pago also supports OAuth-based authentication for marketplace flows (where sellers authorize access to their accounts). This command configures the primary Access Token for the MCP server. For OAuth-based marketplace integrations, see the `mp-marketplace` skill.
+> **Note**: Mercado Pago also supports OAuth-based authentication for marketplace flows (where sellers authorize access to their accounts). This command configures the primary Access Token for the MCP server. For OAuth-based marketplace integrations, use `/mp-integrate product=marketplace`.
 
 ### Pre-check: Is MCP already connected?
 ## Step 1 — Check status
@@ -61,6 +61,56 @@ Add the server manually via your IDE's MCP settings with URL `https://mcp.mercad
 - **Cursor** → `~/.cursor/mcp.json` → `"mercadopago": { "type": "http", "url": "https://mcp.mercadopago.com/mcp" }`
 - **VS Code** → `settings.json` → `"mcp.servers": { "mercadopago": { "type": "http", "url": "https://mcp.mercadopago.com/mcp" } }`
 - **Windsurf** → Settings → MCP Servers → add HTTP server with that URL.
+
+---
+
+## Windows: plugin not loading from cache
+
+If you're on Windows and the plugin commands (e.g. `/mp-test-cards`, `/mp-integrate`) are not recognized, the plugin may be installed but not loaded by the harness.
+
+**Diagnose:**
+```powershell
+# Check if the plugin files are in the expected cache location
+Test-Path "$env:APPDATA\Claude\plugins\cache\claude-plugins-official\mercadopago"
+# Also check without the "claude-plugins-official" subdirectory:
+Test-Path "$env:APPDATA\Claude\plugins\cache\mercadopago"
+```
+
+**Fix — option 1 (preferred): reinstall via CLI**
+```powershell
+claude plugin uninstall mercadopago
+claude plugin install mercadopago
+```
+Then restart Claude Code.
+
+**Fix — option 2: copy `.mcp.json` manually**
+
+If the MCP server is the only thing missing (skills load but MCP calls fail):
+```powershell
+copy plugins\mercadopago\.mcp.json .
+```
+Restart Claude Code.
+
+**Fix — option 3: verify plugin.json path**
+
+Claude Code on Windows reads the plugin registry from `%APPDATA%\Claude\plugins\`. If the `plugin.json` is present but the plugin still isn't recognized, check that the directory name matches exactly (`mercadopago`, not `mercadopago-1` or similar):
+```powershell
+Get-ChildItem "$env:APPDATA\Claude\plugins\cache" -Recurse -Filter "plugin.json" | Select-Object FullName
+```
+
+---
+
+## Manual plugin install (without `claude plugin install`)
+
+If you installed the plugin by copying files manually (not via `claude plugin install`), the MCP server is **not** auto-registered. Fix it in two steps:
+
+1. Copy `plugins/mercadopago/.mcp.json` from this repo to your **project root**:
+   ```bash
+   cp plugins/mercadopago/.mcp.json .
+   ```
+2. Restart Claude Code — it reads `.mcp.json` from the project root on startup and registers the MCP server at `https://mcp.mercadopago.com/mcp` automatically.
+
+> **Not needed when installing via `claude plugin install`** — that command handles `.mcp.json` placement automatically.
 
 ---
 

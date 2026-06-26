@@ -4,7 +4,7 @@ description: Configure and validate Mercado Pago webhooks. Wraps the MCP webhook
 license: Apache-2.0
 copyright: "Copyright (c) 2026 Mercado Pago (MercadoLibre S.R.L.)"
 metadata:
-  version: "4.0.0"
+  version: "4.2.0"
   author: "Mercado Pago Developer Experience"
   category: "development"
   tags: "mercadopago, webhooks, notifications, ipn, hmac, signature"
@@ -20,9 +20,30 @@ This skill is for everything notifications. It is the only place where the HMAC 
 
 `ListMcpResourcesTool` is unreliable for this MCP (always returns "No resources found"). The bootstrap tools `authenticate` / `complete_authentication` are always present and prove nothing.
 
-Check whether `mcp__plugin_mercadopago_mcp__application_list` is callable AND returns a real payload. If not, stop and tell the user:
+Check whether `mcp__plugin_mercadopago_mcp__application_list` is callable AND returns a real payload.
+
+### Soft gate — the receiver scaffold is static
+
+Scaffolding the webhook receiver (Steps 1–2) is **static code** and needs no MCP. The gate is therefore **soft**:
+
+- **Authenticated** → continue normally.
+- **Loaded, not authenticated** → show the prerequisites checklist below + the OAuth prompt inline, then **continue to Steps 1–2** (the receiver scaffold). Do not block. The MCP is only required at Steps 4–6 (`save_webhook`, `notifications_history`) — re-gate per call there.
+- **Plugin not loaded** → tell the user to run `/mcp`, enable `plugin:mercadopago:mcp`, and retry.
+
+OAuth prompt (State B):
 
 > Call `mcp__plugin_mercadopago_mcp__authenticate`, show the URL as a clickable link, and say: "When you see **Authentication Successful** in the browser, come back and say anything." When the user responds, call `application_list` directly — do NOT call `complete_authentication` first (it hangs when the callback was already consumed). Never ask the user to paste the callback URL — it contains a sensitive OAuth code.
+
+Prerequisites checklist (State B):
+
+```
+Before configuring webhooks live, you'll need:
+- [ ] A Mercado Pago developer account
+- [ ] An app created in the Developer Dashboard
+- [ ] Test credentials: APP_USR- access token + public key (tab {test_tab})
+- [ ] The webhook signature secret (Dashboard → Webhooks → Signature secret)
+Run /mp-connect to authenticate (only needed for Steps 4–6 below).
+```
 
 ---
 
@@ -36,7 +57,7 @@ Ask the developer (or infer from `$ARGUMENTS`) which of these they want:
 | Diagnose delivery failures | `notifications_history` | Investigating missed/failed notifications |
 | Scaffold the receiver code | (no MCP call — render the pattern below) | Adding the receiver to the codebase |
 
-You may chain them: scaffold the receiver → `save_webhook` → trigger a real test payment to verify end to end → use `notifications_history` to confirm delivery.
+You may chain them: scaffold the receiver → `save_webhook` → trigger a real test payment → use `notifications_history` to confirm delivery.
 
 ---
 
@@ -115,6 +136,8 @@ If a topic is not in this table, query MCP for the latest list rather than guess
 
 ## Step 4 — Configure on Mercado Pago (`save_webhook`)
 
+> **Re-gate before this MCP call:** verify `application_list` is callable. If not, run the Step 0 State B OAuth flow first, then proceed.
+
 ```
 mcp__plugin_mercadopago_mcp__save_webhook(
   callback="https://<production-url>/mp/webhook",
@@ -133,20 +156,18 @@ Confirm the response shows the URL and topics correctly registered.
 
 1. Make a real payment using test credentials + test user + test card
 2. The webhook fires automatically when the payment status changes
-3. Verify your receiver returned `200` and processed the event
+3. Verify your receiver returned `200` and processed the event idempotently
 
-To confirm delivery, use `notifications_history`:
+Use `notifications_history` to confirm delivery:
 ```
-mcp__plugin_mercadopago_mcp__notifications_history(
-  application_id="<your_app_id>"
-)
+mcp__plugin_mercadopago_mcp__notifications_history()
 ```
-
-This shows which notifications were delivered, failed, or retried.
 
 ---
 
 ## Step 6 — Diagnose missed deliveries
+
+> **Re-gate before this MCP call:** verify `application_list` is callable. If not, run the Step 0 State B OAuth flow first, then proceed.
 
 ```
 mcp__plugin_mercadopago_mcp__notifications_history()
