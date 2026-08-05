@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-05-12T17:08:15.849155+00:00",
+  "generated_at": "2026-08-05T14:24:34.958105+00:00",
   "plugin": {
     "name": "mercadopago",
-    "version": "4.1.0",
-    "description": "Mercado Pago full-product integration toolkit. One agent routes to four orchestration skills (mp-integrate, mp-webhooks, mp-test-setup, mp-review) that pull live data from the official Mercado Pago MCP server. The MCP must always be connected — there is no offline mode.",
+    "version": "4.3.0",
+    "description": "Mercado Pago full-product integration toolkit. One agent routes to four orchestration skills (mp-integrate, mp-webhooks, mp-test-setup, mp-review). Scaffolding works without MCP auth; live docs, credential lookup, and test-user creation require the official Mercado Pago MCP server.",
     "repository": "https://github.com/mercadopago/mercadopago-claude-marketplace",
     "license": "Apache-2.0",
     "author": "Mercado Pago Developer Experience",
@@ -24,10 +24,10 @@
     ]
   },
   "stats": {
-    "total": 10,
+    "total": 11,
     "skills": 4,
     "agents": 1,
-    "commands": 3,
+    "commands": 4,
     "hooks": 2
   },
   "components": [
@@ -35,7 +35,7 @@
       "name": "mp-integration-expert",
       "type": "agent",
       "description": "Use when implementing, reviewing, or debugging any Mercado Pago payment integration. Routes the request to one of four skills (mp-integrate, mp-webhooks, mp-test-setup, mp-review) and uses the Mercado Pago MCP server for live API data. The MCP must always be connected — there is no offline mode.",
-      "version": "4.1.0",
+      "version": "4.2.0",
       "tags": [
         "payments",
         "mercadopago",
@@ -56,7 +56,7 @@
       "name": "mp-integrate",
       "type": "skill",
       "description": "Wizard that scaffolds a complete Mercado Pago integration for any product. Asks the developer the minimum questions needed (country, product, variant, SDK, mode), queries the MCP server for live docs, and produces a ready-to-paste code bundle. Use whenever the developer wants to add or migrate a Mercado Pago payment flow.",
-      "version": "4.1.0",
+      "version": "4.2.0",
       "tags": [
         "mercadopago",
         "integration",
@@ -72,13 +72,17 @@
       ],
       "license": "Apache-2.0",
       "path": "plugins/mercadopago/skills/mp-integrate/SKILL.md",
-      "references": []
+      "references": [
+        "references/products.md",
+        "references/recommendation-template.md",
+        "references/terminology-rules.md"
+      ]
     },
     {
       "name": "mp-review",
       "type": "skill",
       "description": "Review a Mercado Pago integration against the official quality checklist and a fixed cross-cutting security checklist. Calls quality_checklist (and quality_evaluation when applicable) on the Mercado Pago MCP. Use after the integration is in place, or when /mp-review is invoked.",
-      "version": "4.1.0",
+      "version": "4.2.0",
       "tags": [
         "mercadopago",
         "review",
@@ -93,8 +97,8 @@
     {
       "name": "mp-test-setup",
       "type": "skill",
-      "description": "Create test users and add funds to them for Mercado Pago testing. Wraps create_test_user and add_money_test_user from the MCP. Clarifies that all credentials (including test users) use the APP_USR- prefix — there is no longer a TEST- sandbox.",
-      "version": "4.0.0",
+      "description": "Create test users and add funds to them for Mercado Pago testing. Wraps create_test_user and add_money_test_user from the MCP. Clarifies that credentials come in APP_USR- (Orders API, Checkout Pro, Point, QR) and TEST- (Checkout API, Bricks, Payments API) formats — both are valid and actively issued.",
+      "version": "4.2.0",
       "tags": [
         "mercadopago",
         "testing",
@@ -109,8 +113,8 @@
     {
       "name": "mp-webhooks",
       "type": "skill",
-      "description": "Configure, simulate, and validate Mercado Pago webhooks. Wraps the MCP webhook tools (save_webhook, simulate_webhook, notifications_history_diagnostics) and provides the HMAC-SHA256 signature validation pattern that every receiver must implement. Use when adding, debugging, or hardening notification handling.",
-      "version": "4.0.0",
+      "description": "Configure and validate Mercado Pago webhooks. Wraps the MCP webhook tools (save_webhook, notifications_history) and provides the HMAC-SHA256 signature validation pattern that every receiver must implement. Use when adding, debugging, or hardening notification handling.",
+      "version": "4.2.0",
       "tags": [
         "mercadopago",
         "webhooks",
@@ -137,8 +141,8 @@
     {
       "name": "/mp-integrate",
       "type": "command",
-      "description": "Scaffold a Mercado Pago integration via the mp-integrate wizard. Supports every product (Checkout Pro, Checkout API, Bricks, QR, Point, Subscriptions, Marketplace, Wallet Connect, Money Out, SmartApps).",
-      "argument_hint": "[product=...] [country=...] [mode=...] [client=...] [3ds=yes|no] [recurrent=yes|no] [marketplace=yes|no]  |  webhook  |  test-setup",
+      "description": "Scaffold a Mercado Pago integration via the mp-integrate wizard. Supports every product (Checkout Pro, Checkout API, Bricks, QR, Point, Subscriptions, Marketplace, Wallet Connect, Money Out, SmartApps). Also migrates existing Payments API integrations to the Orders API.",
+      "argument_hint": "[product=...] [country=...] [mode=...] [client=...] [3ds=yes|no] [recurrent=yes|no] [marketplace=yes|no]  |  webhook  |  test-setup  |  migrate",
       "allowed_tools": [
         "Read",
         "Write",
@@ -166,6 +170,19 @@
       ],
       "license": "Apache-2.0",
       "path": "plugins/mercadopago/commands/mp-review.md"
+    },
+    {
+      "name": "/mp-test-cards",
+      "type": "command",
+      "description": "Returns test card numbers for a given country. No MCP authentication required.",
+      "argument_hint": "[country_code]",
+      "allowed_tools": [
+        "Read",
+        "Bash",
+        "AskUserQuestion"
+      ],
+      "license": "Apache-2.0",
+      "path": "plugins/mercadopago/commands/mp-test-cards.md"
     },
     {
       "name": "check-version",
