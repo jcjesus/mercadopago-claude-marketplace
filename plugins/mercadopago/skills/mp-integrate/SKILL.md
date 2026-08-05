@@ -179,7 +179,7 @@ Example block to render:
 ```
 I auto-detected the following from your repo:
 
-  ✓ App:    Villa mco (157134683642259) — from application_list
+  ✓ App:    My Store (123456789012345) — from application_list
   ✓ SDK:    node — from backend/package.json (mercadopago v2.12.0 already installed)
   ✓ Client: react — from frontend/package.json
 
@@ -272,7 +272,7 @@ Now I need a few details to scaffold the right integration:
 Right:
 
 ```
-✓ App: Villa mco (157134683642259) — from application_list
+✓ App: My Store (123456789012345) — from application_list
 ✓ SDK: node — from package.json
 (Country will be asked next — not auto-detected.)
 ```
@@ -297,7 +297,7 @@ Fields to persist (write after each is resolved, do not wait until the end):
 - client: react
 - lang: es
 - credential_type: test
-- application_id: 157134683642259
+- application_id: 123456789012345
 - brick: card-payment
 - qr_mode: dynamic
 - recurrent: no
