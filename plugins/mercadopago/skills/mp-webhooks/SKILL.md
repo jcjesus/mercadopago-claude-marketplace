@@ -32,7 +32,17 @@ Scaffolding the webhook receiver (Steps 1–2) is **static code** and needs no M
 
 OAuth prompt (State B):
 
-> Call `mcp__plugin_mercadopago_mcp__authenticate`, show the URL as a clickable link, and say: "When you see **Authentication Successful** in the browser, come back and say anything." When the user responds, call `application_list` directly — do NOT call `complete_authentication` first (it hangs when the callback was already consumed). Never ask the user to paste the callback URL — it contains a sensitive OAuth code.
+> Call `mcp__plugin_mercadopago_mcp__authenticate` and show the URL in **two formats** so it's always accessible:
+>
+> **[Conectar ao Mercado Pago]({url})**
+>
+> ```
+> {url}
+> ```
+>
+> Se o link não for clicável, copie a URL do bloco acima. When you see **Authentication Successful** in the browser, come back and say anything.
+>
+> **Retry limit:** maximum 2 `authenticate` attempts per session. After 2 failures, offer: 'Try again' / 'Continue offline' / 'Cancel'. When the user responds, call `application_list` directly — do NOT call `complete_authentication` first. Never ask the user to paste the callback URL.
 
 Prerequisites checklist (State B):
 

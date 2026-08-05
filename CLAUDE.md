@@ -222,8 +222,9 @@ wc -l plugins/mercadopago/agents/mp-integration-expert.md
 grep -rl "^tools:" plugins/mercadopago/skills/*/SKILL.md && echo "ERROR: skills must not have tools field" || echo "OK"
 
 # Every skill mentions the MCP gate
+# mp-integrate uses a soft gate (authenticate inline) — both patterns are valid
 for f in plugins/mercadopago/skills/*/SKILL.md; do
-  grep -q "ListMcpResourcesTool\|MCP is connected\|mp-connect" "$f" || echo "MISSING MCP GATE: $f"
+  grep -q "ListMcpResourcesTool\|MCP is connected\|mp-connect\|authenticate" "$f" || echo "MISSING MCP GATE: $f"
 done
 
 # All skills have valid YAML frontmatter

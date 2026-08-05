@@ -22,8 +22,18 @@ This skill audits a Mercado Pago integration. It does not duplicate the official
 
 Check whether `mcp__plugin_mercadopago_mcp__quality_checklist` is callable AND returns a real payload. If not, **call `mcp__plugin_mercadopago_mcp__authenticate` immediately** and show:
 
-> To continue I need access to your Mercado Pago account. Open this link to connect: **[Connect Mercado Pago]({url})**
+> To continue I need access to your Mercado Pago account. Open this link to connect:
+**[Connect Mercado Pago]({url})**
+
+```
+{url}
+```
+
+If the link is not clickable, copy the URL from the code block above.
+
 When you see "Authentication Successful" in the browser, come back and say anything.
+
+**Retry limit:** maximum 2 `authenticate` calls per session. After 2 failures, offer: 'Try again' / 'Continue offline' / 'Cancel'.
 
 When the user returns, call `application_list` directly — do NOT call `complete_authentication` first. Never ask the user to paste the callback URL.
 
@@ -41,8 +51,14 @@ Use `Grep`/`Glob` to find:
 Determine:
 
 - **API in use**: Payments API (`/v1/payments`) vs Orders API (`/v1/orders`). Both can coexist.
-  - **If the integration uses the Payments API**, it is on the legacy path. The Payments API is being deprecated; Mercado Pago is pushing all integrations toward the Orders API. Always include a `Needs attention` item in the Implementation Report recommending the migration, with the file:line where `/v1/payments` is called. Do **not** treat it as a Blocker (existing code still works), but flag it as forward-looking technical debt.
-  - **Exception**: Checkout Pro stays on preferences (the Orders API does not exist for Checkout Pro). Do not flag `/v1/checkout/preferences` as legacy.
+  - **If the integration uses legacy Instore APIs**, it is on the legacy path. Always include a `Needs attention` item in the Implementation Report with the file:line, and suggest the migration command: *"Run `/mp-integrate migrate` to automate the migration to the Orders API."* Do **not** treat it as a Blocker (existing code still works), but flag it as forward-looking technical debt. Legacy Instore patterns to flag:
+    - `/mpmobile/instore/qr` (QR Instore)
+    - `/instore/qr/seller/collectors` (QR Instore V2)
+    - `/instore/orders/qr/seller/collectors` (QR Dinámico)
+    - `/point/integration-api/devices/{id}/payment-intents` (Point)
+  - **If the integration uses `/v1/payments`** (Online): flag as technical debt if it is a server-side card payment (Checkout API / Marketplace). Do **not** suggest `/mp-integrate migrate` for Online — migration for those products is out of scope for this plugin.
+  - **Exception 1**: Checkout Pro stays on preferences (the Orders API does not exist for Checkout Pro). Do not flag `/v1/checkout/preferences` as legacy.
+  - **Exception 2**: Bricks uses `/v1/payments` correctly (server-side after `CardPayment` tokenization). Do not flag `/v1/payments` calls in files that also contain `CardPayment` or `onSubmit` as legacy.
 - **Products in use**: Checkout Pro/API, Bricks, Subscriptions, Marketplace, etc. — derive from endpoint patterns and request payloads.
 
 ---

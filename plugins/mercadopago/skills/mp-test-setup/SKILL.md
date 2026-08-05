@@ -58,8 +58,18 @@ Before creating test users, confirm the basics via `AskUserQuestion` (up to 3 qu
 
 Check whether `mcp__plugin_mercadopago_mcp__application_list` is callable AND returns at least one application. If not, **call `mcp__plugin_mercadopago_mcp__authenticate` immediately** and show:
 
-> To create test users I need access to your Mercado Pago account. Open this link to connect: **[Connect Mercado Pago]({url})**
+> To create test users I need access to your Mercado Pago account. Open this link to connect:
+**[Connect Mercado Pago]({url})**
+
+```
+{url}
+```
+
+If the link is not clickable, copy the URL from the code block above.
+
 When you see "Authentication Successful" in the browser, come back and say anything.
+
+**Retry limit:** maximum 2 `authenticate` calls per session. After 2 failures, offer: 'Try again' / 'Continue offline' / 'Cancel'.
 
 When the user returns, call `application_list` directly — do NOT call `complete_authentication` first. Never ask the user to paste the callback URL.
 

@@ -1,6 +1,6 @@
 ---
-description: Scaffold a Mercado Pago integration via the mp-integrate wizard. Supports every product (Checkout Pro, Checkout API, Bricks, QR, Point, Subscriptions, Marketplace, Wallet Connect, Money Out, SmartApps).
-argument-hint: "[product=...] [country=...] [mode=...] [client=...] [3ds=yes|no] [recurrent=yes|no] [marketplace=yes|no]  |  webhook  |  test-setup"
+description: Scaffold a Mercado Pago integration via the mp-integrate wizard. Supports every product (Checkout Pro, Checkout API, Bricks, QR, Point, Subscriptions, Marketplace, Wallet Connect, Money Out, SmartApps). Also migrates existing Payments API integrations to the Orders API.
+argument-hint: "[product=...] [country=...] [mode=...] [client=...] [3ds=yes|no] [recurrent=yes|no] [marketplace=yes|no]  |  webhook  |  test-setup  |  migrate"
 license: Apache-2.0
 copyright: "Copyright (c) 2026 Mercado Pago (MercadoLibre S.R.L.)"
 allowed-tools: [Read, Write, Edit, Bash, Grep, Glob, AskUserQuestion, WebFetch]
@@ -18,6 +18,7 @@ Inspect `$ARGUMENTS`:
 |--------------------------|-----------------|
 | `webhook` | Read and follow the SKILL.md at `~/.claude/plugins/cache/claude-plugins-official/mercadopago/{version}/skills/mp-webhooks/SKILL.md` |
 | `test-setup` | Read and follow `~/.claude/plugins/cache/claude-plugins-official/mercadopago/{version}/skills/mp-test-setup/SKILL.md` |
+| `migrate` | Read and follow `~/.claude/plugins/cache/claude-plugins-official/mercadopago/{version}/skills/mp-integrate/SKILL-migrate.md` |
 | anything else (or empty) | Read and follow `~/.claude/plugins/cache/claude-plugins-official/mercadopago/{version}/skills/mp-integrate/SKILL.md` |
 
 ## Execution rules
