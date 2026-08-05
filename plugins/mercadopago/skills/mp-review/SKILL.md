@@ -4,7 +4,7 @@ description: Review a Mercado Pago integration against the official quality chec
 license: Apache-2.0
 copyright: "Copyright (c) 2026 Mercado Pago (MercadoLibre S.R.L.)"
 metadata:
-  version: "4.2.0"
+  version: "4.3.0"
   author: "Mercado Pago Developer Experience"
   category: "development"
   tags: "mercadopago, review, quality, checklist, security"
@@ -203,7 +203,7 @@ The report is the source of truth for the developer's next session: it tells the
 ### Resources used
 - MCP: `quality_checklist` ({date/time of call})
 - MCP: `quality_evaluation` (if it was run, with the payment_id/order_id used)
-- Skill: `mp-review` v4.2.0
+- Skill: `mp-review` v4.3.0
 
 **Scores**: {X}/{Y} required, {Z}/{W} best practices, {S}/9 security. **Verdict**: {Ready for production | Needs fixes | Blocked}.
 ```
