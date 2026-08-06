@@ -541,7 +541,7 @@ Immediately after rendering the bundle, **before listing next steps**, call `Ask
 1. **Install the SDK** — run `npm install mercadopago` (or the equivalent for the detected SDK) in the directory that contains the server-side manifest. Report any non-zero exit code and stop.
 2. **Write the server snippet** — create or edit the server file (e.g., `backend/index.js`, `backend/src/routes/mercadopago.js`) inserting the snippet from Step 4. If the file already exists, inject the new route after existing routes rather than overwriting.
 3. **Write the client component** — create `frontend/src/components/CheckoutButton.{jsx|tsx|vue|…}` (or the framework-appropriate path/extension) with the client snippet from Step 4. If the file already exists, warn and ask the developer before overwriting.
-4. **Create `.env.example`** — write the template vars (MP_ACCESS_TOKEN, MP_PUBLIC_KEY, MP_WEBHOOK_SECRET, APP_URL) to `.env.example`. Never touch or create `.env` directly — the developer must fill in their credentials.
+4. **Create `.env.example`** — write the template vars (MP_ACCESS_TOKEN, MP_PUBLIC_KEY, MP_WEBHOOK_SECRET, APP_URL) to `.env.example`. Only create `.env` with real values if credentials were already fetched via `get_credentials` in Step 0.b (State A) — in that case `.env` already exists; do NOT overwrite it. In State B (no MCP), never create `.env` — the developer must fill in their own credentials.
 5. **Update `.gitignore`** — add `.env`, `.env.*.local`, `.mp-integrate-progress.md` if not already present.
 6. After all writes, print a short summary:
 

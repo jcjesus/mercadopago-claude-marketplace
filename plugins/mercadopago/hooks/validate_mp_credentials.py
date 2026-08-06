@@ -27,7 +27,7 @@ import sys
 
 PATTERNS = {
     "MP Access Token": re.compile(
-        r"(TEST|APP_USR)-\d{12,}-\d{6}-[a-f0-9]{32}-U\d+"
+        r"(TEST|APP_USR)-\d{12,}-\d{6}-[a-f0-9]{32}-\d+"
     ),
     "Client Secret": re.compile(
         r"""['"]client_secret['"]\s*[:=]\s*['"][a-f0-9]{32,}['"]"""
@@ -160,21 +160,26 @@ def scan(text: str) -> list[tuple[str, str]]:
 
 
 def is_env_file(path: str) -> bool:
-    """Check if path is a .env file (not .env.example) within the project root."""
+    """Check if path is a .env secrets file (not .env.example or code like .env.ts)."""
     basename = os.path.basename(path)
+    # Allowlist of known env-var file suffixes — anything else (e.g. .env.ts) is code
+    _ALLOWED = {".env", ".env.local", ".env.development", ".env.production", ".env.test",
+                ".env.development.local", ".env.production.local", ".env.test.local"}
     if basename == ".env.example" or basename.endswith(".env.example"):
         return False
-    if not (basename == ".env" or basename.startswith(".env.")):
+    if basename not in _ALLOWED:
         return False
-    # Ensure the file is within the current working directory (prevent path traversal)
+    return True
+
+
+def is_within_project(path: str) -> bool:
+    """Return True if path resolves to a location inside the current working directory."""
     try:
         abs_path = os.path.realpath(os.path.abspath(path))
         project_root = os.path.realpath(os.getcwd())
-        if not abs_path.startswith(project_root + os.sep) and abs_path != project_root:
-            return False
+        return abs_path.startswith(project_root + os.sep) or abs_path == project_root
     except (OSError, ValueError):
         return False
-    return True
 
 
 # ---------- main ----------
@@ -202,7 +207,7 @@ def main():
 
     file_path = get_file_path(tool_name, tool_input)
 
-    # --- Read tool path: block .env reads (not .env.example) ---
+    # --- Read tool path: block .env reads (not .env.example), inside OR outside project ---
     if tool_name == "Read":
         if file_path and is_env_file(file_path):
             print(
@@ -215,8 +220,9 @@ def main():
 
     # --- Write/Edit/MultiEdit/Bash path: scan for credentials ---
 
-    # Skip .env files — credentials belong there
-    if file_path and is_env_file(file_path):
+    # Skip .env files that are inside the project — credentials belong there.
+    # Files outside the project root are still scanned (no reason to skip them).
+    if file_path and is_env_file(file_path) and is_within_project(file_path):
         sys.exit(0)
 
     # Extract and scan

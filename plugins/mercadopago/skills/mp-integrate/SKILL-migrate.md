@@ -155,15 +155,27 @@ fetch(`https://api.mercadopago.com/v1/orders/${data.id}`, ...)
 - **`orderStore.delete` on terminal statuses** — call `orderStore.delete(external_reference)` for `canceled`, `expired`, and `refunded`. Omitting it leaves orphan entries in memory indefinitely.
 
 ```js
+import crypto from 'node:crypto';
+
 // ✅ Required shape — always generate this exact structure
 app.post('/webhooks', (req, res) => {
-  // Validate MP signature BEFORE any processing (mirrors mp-webhooks HMAC pattern)
-  if (!verifyMpSignature(req, process.env.MP_WEBHOOK_SECRET)) {
-    return res.sendStatus(401);
-  }
+  // HMAC-SHA256 signature validation (canonical pattern from mp-webhooks)
+  const signature = req.header('x-signature') ?? '';
+  const requestId = req.header('x-request-id') ?? '';
+  const parts = Object.fromEntries(
+    signature.split(',').map((p) => p.split('=').map((s) => s.trim()))
+  );
+  const ts = parts.ts;
+  const v1 = parts.v1;
+  const dataId = req.body?.data?.id;
+  if (!ts || !v1 || !dataId || !requestId) return res.status(400).end();
+  const canonical = `id:${dataId};request-id:${requestId};ts:${ts};`;
+  const expected = crypto.createHmac('sha256', process.env.MP_WEBHOOK_SECRET).update(canonical).digest('hex');
+  const valid = expected.length === v1.length &&
+                crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(v1));
+  if (!valid) return res.status(401).end();
 
   const { type, data } = req.body;
-  const requestId = req.headers['x-request-id']; // unique per delivery from MP
 
   // Dedup by requestId — NOT by type:data.id (would discard refund after payment)
   if (processedEvents.has(requestId)) return res.sendStatus(200);
@@ -190,8 +202,6 @@ app.post('/webhooks', (req, res) => {
   }
 });
 ```
-
-**`verifyMpSignature` implementation:** defer to `mp-webhooks/SKILL.md` for the canonical constant-time HMAC-SHA256 pattern. Do NOT inline a custom implementation — reference the skill and generate the same function it specifies. `MP_WEBHOOK_SECRET` must be present in `.env.example` (it already is — do not add it twice).
 - This applies to every file in the project, not just the main webhook handler.
 
 **Idempotency check:** if a file already contains `/v1/orders` → skip it and note: *"Already on Orders API."*

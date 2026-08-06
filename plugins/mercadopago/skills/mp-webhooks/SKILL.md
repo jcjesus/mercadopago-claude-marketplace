@@ -151,7 +151,7 @@ If a topic is not in this table, query MCP for the latest list rather than guess
 ```
 mcp__plugin_mercadopago_mcp__save_webhook(
   callback="https://<production-url>/mp/webhook",
-  callback_sandbox="https://<staging-url>/mp/webhook",
+  callback_url="https://<your-domain>/mp/webhook",
   topics=["payment", "merchant_order", ...]
 )
 ```
