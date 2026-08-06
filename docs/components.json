@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-06T12:49:05.727013+00:00",
+  "generated_at": "2026-08-06T16:11:19.076687+00:00",
   "plugin": {
     "name": "mercadopago",
     "version": "4.3.0",
@@ -198,7 +198,7 @@
       "type": "hook",
       "description": "Mercado Pago developer plugin hooks",
       "trigger": "PreToolUse",
-      "matcher": "Bash|Edit|Write|MultiEdit|Read",
+      "matcher": "Bash|Edit|Write|MultiEdit|Read|NotebookEdit",
       "hook_type": "command",
       "path": "plugins/mercadopago/hooks/hooks.json"
     }

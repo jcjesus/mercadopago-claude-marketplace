@@ -45,8 +45,8 @@ jobs:
           # Build token at runtime to avoid secret-scanning false positives on the literal.
           # Format: (TEST|APP_USR)-{12+digits}-{6digits}-{32hex}-{digits} — no U prefix.
           PREFIX="TEST"
-          HASH="abc12345678901234567890123456789"  # 32 hex chars
-          TOKEN="${PREFIX}-123456789012-123456-${HASH}0-987654321"
+          HASH="abc1234567890123456789012345678a"  # exactly 32 hex chars
+          TOKEN="${PREFIX}-123456789012-123456-${HASH}-987654321"
           RESULT=$(echo "{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"app.js\",\"content\":\"const token = \\\"${TOKEN}\\\"\"}}" \
             | python3 plugins/mercadopago/hooks/validate_mp_credentials.py; echo $?)
           if [ "$RESULT" != "2" ]; then
