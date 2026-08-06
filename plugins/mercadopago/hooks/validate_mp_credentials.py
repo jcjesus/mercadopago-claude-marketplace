@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 Mercado Pago Plugin — Credential Leak Prevention Hook
 
-Scans tool inputs (Bash, Edit, Write, MultiEdit, Read) for hardcoded
+Scans tool inputs (Bash, Edit, Write, MultiEdit, NotebookEdit, Read) for hardcoded
 Mercado Pago credentials and blocks them before they reach source files.
 Also blocks reading .env files to prevent credential exposure.
 
@@ -140,6 +140,8 @@ def extract_text(tool_name: str, tool_input: dict) -> str:
         # MultiEdit contains an array of edits
         edits = tool_input.get("edits", [])
         return "\n".join(e.get("new_string", "") for e in edits)
+    elif tool_name == "NotebookEdit":
+        return tool_input.get("cell_source", "")
     return ""
 
 
@@ -147,6 +149,8 @@ def get_file_path(tool_name: str, tool_input: dict) -> str:
     """Extract the target file path from a tool input."""
     if tool_name in ("Write", "Edit", "MultiEdit", "Read"):
         return tool_input.get("file_path", "")
+    if tool_name == "NotebookEdit":
+        return tool_input.get("notebook_path", "")
     return ""
 
 
