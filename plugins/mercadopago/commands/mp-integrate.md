@@ -14,12 +14,12 @@ This command runs the Mercado Pago integration wizard. **Do not re-read this fil
 
 Inspect `$ARGUMENTS`:
 
-| `$ARGUMENTS` starts with | Skill to follow |
+| `$ARGUMENTS` starts with | Skill file (resolve path via `find` — see Rule 2) |
 |--------------------------|-----------------|
-| `webhook` | Read and follow the SKILL.md at `~/.claude/plugins/cache/claude-plugins-official/mercadopago/{version}/skills/mp-webhooks/SKILL.md` |
-| `test-setup` | Read and follow `~/.claude/plugins/cache/claude-plugins-official/mercadopago/{version}/skills/mp-test-setup/SKILL.md` |
-| `migrate` | Read and follow `~/.claude/plugins/cache/claude-plugins-official/mercadopago/{version}/skills/mp-integrate/SKILL-migrate.md` |
-| anything else (or empty) | Read and follow `~/.claude/plugins/cache/claude-plugins-official/mercadopago/{version}/skills/mp-integrate/SKILL.md` |
+| `webhook` | `*mercadopago*/skills/mp-webhooks/SKILL.md` |
+| `test-setup` | `*mercadopago*/skills/mp-test-setup/SKILL.md` |
+| `migrate` | `*mercadopago*/skills/mp-integrate/SKILL-migrate.md` |
+| anything else (or empty) | `*mercadopago*/skills/mp-integrate/SKILL.md` |
 
 ## Execution rules
 
@@ -165,10 +165,17 @@ Inspect `$ARGUMENTS`:
      > Continuing — use test credentials before running any payment.
      Save `credential_type=unknown` to `.mp-integrate-progress.md`.
 
-2. **Read the SKILL.md ONCE.** Use the `Read` tool with the relative path from the routing table. If the file is not found in the current project (path does not exist), run via `Bash` to locate it in the plugin cache:
-   Use the **Read tool** (not Bash) with this path:
-   `~/.claude/plugins/cache/claude-plugins-official/mercadopago/{version}/skills/mp-integrate/SKILL.md`
-   Then `Read` the absolute path returned. Once loaded, **execute the steps starting from Step 1.a** (auto-detect SDK/client/mode) — skip Pre-flight, Step 0, and Step 0.b, which already ran in Steps 1.1–1.4 above. Do not re-read the SKILL.md or this command file again. Do not delegate to a separate agent.
+2. **Read the SKILL.md ONCE.** Use the routing table to pick the right file, then locate it via `Bash`:
+
+   ```bash
+   find ~/.claude/plugins/cache -path "*mercadopago*/skills/mp-integrate/SKILL.md" 2>/dev/null | sort -V | tail -1
+   # For webhook route:  find ~/.claude/plugins/cache -path "*mercadopago*/skills/mp-webhooks/SKILL.md" 2>/dev/null | sort -V | tail -1
+   # For test-setup:     find ~/.claude/plugins/cache -path "*mercadopago*/skills/mp-test-setup/SKILL.md" 2>/dev/null | sort -V | tail -1
+   # For migrate:        find ~/.claude/plugins/cache -path "*mercadopago*/skills/mp-integrate/SKILL-migrate.md" 2>/dev/null | sort -V | tail -1
+   # Windows (PowerShell): Get-ChildItem "$env:APPDATA\Claude\plugins" -Recurse -Filter "SKILL.md" | Where-Object { $_.FullName -like "*mp-integrate*" } | Sort-Object FullName | Select-Object -Last 1 -ExpandProperty FullName
+   ```
+
+   Use the `Read` tool with the absolute path returned. Once loaded, **execute the steps starting from Step 1.a** (auto-detect SDK/client/mode) — skip Pre-flight, Step 0, and Step 0.b, which already ran in Steps 1.1–1.4 above. Do not re-read the SKILL.md or this command file again. Do not delegate to a separate agent.
 
 3. **Apply the HARD LOCKS at the top of the SKILL.md before any `AskUserQuestion`.** In particular: SDK is never asked, `mode` for `checkout-pro` is `preferences` (Orders is not available — never offer it), and there is no `Environment` picker.
 
