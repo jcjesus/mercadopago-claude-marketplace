@@ -6,7 +6,13 @@ All notable changes to this project are documented in this file.
 
 ### Fixed
 
-- Hooks no longer invoke `python3` directly. On Windows, a bare `python3` almost always resolves to the Microsoft Store's execution-alias stub (a 0-byte binary), and every invocation leaked handles and commit charge in the AppXSvc service with no self-cleanup — `check-version.sh` (every `UserPromptSubmit`) and the credential-scan `PreToolUse` hook (nearly every tool call) combined to leak tens of GB of committed memory within a normal session on affected machines. `check-version.sh` now reads the version field with `grep`/`sed` instead of spawning an interpreter; the credential-scan hook now resolves a real Python via a Windows-aware helper (`resolve-python.sh`) before running, falling back to its previous no-op behavior if none is found.
+- Hooks no longer invoke `python3` directly. On Windows, a bare `python3` almost always resolves to the Microsoft Store's execution-alias stub (a 0-byte binary), and every invocation leaked handles and commit charge in the AppXSvc service with no self-cleanup — `check-version.sh` (every `UserPromptSubmit`) and the credential-scan `PreToolUse` hook (nearly every tool call) combined to leak tens of GB of committed memory within a normal session on affected machines. `check-version.sh` now reads the version field with `grep`/`sed` instead of spawning an interpreter; the credential-scan hook now resolves a real Python via a Windows-aware helper (`resolve-python.sh`) before running, falling back to its previous no-op behavior if none is found. The resolver always verifies Python 3 (rejecting a `py` launcher that would otherwise default to Python 2) and is covered by deterministic regression tests.
+
+## [4.3.2] - 2026-08-26
+
+### Fixed
+
+- `/mp-integrate` reads routed skills directly from `${CLAUDE_PLUGIN_ROOT}` instead of probing the plugin root through a Bash preflight.
 
 ## [4.3.1] - 2026-08-21
 
